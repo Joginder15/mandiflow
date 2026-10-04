@@ -1,0 +1,70 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/mandi_orders?allowPublicKeyRetrieval=true
+    username: root
+    password: root
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # Liquibase owns the schema; Hibernate only checks it
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        type.preferred_uuid_jdbc_type: CHAR        # UUIDs live in CHAR(36) columns
+        type.preferred_instant_jdbc_type: TIMESTAMP
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        "[enable.idempotence]": true
+    consumer:
+      group-id: order-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        "[spring.deserializer.value.delegate.class]": org.springframework.kafka.support.serializer.JsonDeserializer
+        "[spring.json.trusted.packages]": "com.mandiflow.events"
+
+mandiflow:
+  outbox:
+    poll-interval-ms: 500
+    redis-lock: true              # only one running copy publishes outbox rows
+  rate-limit:
+    orders-per-minute: 5
+  web:
+    allowed-origins: http://localhost:5173
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.mandiflow: DEBUG
+    org.apache.kafka: WARN

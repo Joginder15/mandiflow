@@ -1,0 +1,32 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: analytics-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    streams:
+      application-id: analytics-service      # also the consumer group ID
+      state-dir: ${java.io.tmpdir}/mandiflow-analytics
+      properties:
+        "[default.key.serde]": org.apache.kafka.common.serialization.Serdes$StringSerde
+        "[default.value.serde]": org.apache.kafka.common.serialization.Serdes$StringSerde
+        "[commit.interval.ms]": 1000          # show updates within a second while you practise
+        "[statestore.cache.max.bytes]": 0
+
+mandiflow:
+  web:
+    allowed-origins: http://localhost:5173
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.mandiflow: DEBUG
+    org.apache.kafka: WARN
